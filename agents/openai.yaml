@@ -1,0 +1,4 @@
+interface:
+  display_name: "Blender MCP kit"
+  short_description: "Configure and call local Blender MCP for modeling, scene checks, screenshots, and GLB export."
+  default_prompt: "Use $open-blender-kit to repair local Blender MCP and build a verified 3D mesh."

@@ -1,0 +1,7 @@
+{
+  "id": "open-blender-kit",
+  "kind": "skill",
+  "name": "open-blender-kit",
+  "repo": "https://github.com/MlsMoon/open-blender-kit",
+  "iterate": ["local", "tmp"]
+}
