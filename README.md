@@ -1,51 +1,30 @@
 # open-blender-kit
 
-An [Agent Skill](https://agentskills.io/specification) that teaches AI agents how to configure, repair, and use the local **Blender MCP** on Windows: modeling, scene checks, screenshots, save, and GLB / FBX export.
+使用 MoonArtsToolCLI 驱动隔离 Blender 实例的 Agent Skill。
+支持建模、场景检查、渲染、保存和 FBX/GLB 导出；身份与 Git 仓库保持 open-blender-kit。
 
-This repository **is** the skill folder. The directory name, GitHub repo name, and `SKILL.md` `name` field must all stay `open-blender-kit`.
+## 安装与前提
 
-It is not tied to any game project.
+将本仓库放入宿主的技能目录，读取 [SKILL.md](SKILL.md)。
+需要 PowerShell 7、已安装的 Blender，以及宿主提供的 MoonArtsToolCLI.exe / manifest.json 配对文件。
+本仓库不分发 CLI 二进制，也不自动下载或安装软件。
 
-## Source repository
-
-This folder is its own Git repository. A Plastic SCM pull of a game project usually copies the files and **drops `.git`**.
-
-- Git: https://github.com/MlsMoon/open-blender-kit
-- Install / update: [Moon Game Dev Tool Manager](https://github.com/MlsMoon/moon-game-dev-tool-manager)
-
-Commit and push skill changes in that Git repo. Do not treat a copy inside one Unity workspace as the place to publish.
-
-## What you get
-
-| Need | Where |
-|---|---|
-| Install / repair MCP, launch, Suzanne smoke | `scripts/ensure.ps1` |
-| Modeling rules and fault table | `SKILL.md` |
-| Fixed-view Cycles glass bake | `references/cycles-fixed-view-glass-bake.md` |
-| Machine-local Blender path and port | `local/blender.local.json` (copy the `.example`) |
-
-## Install
-
-Clone into your agent's skills directory. Keep the folder name:
-
-```bash
-# Claude Code
-git clone https://github.com/MlsMoon/open-blender-kit.git \
-  ~/.claude/skills/open-blender-kit
-
-# Codex / other agents
-git clone https://github.com/MlsMoon/open-blender-kit.git \
-  ~/.agents/skills/open-blender-kit
-```
-
-Or install with [Moon Game Dev Tool Manager](https://github.com/MlsMoon/moon-game-dev-tool-manager) (catalog id `open-blender-kit`).
-
-Then:
+包装脚本从当前目录及 Skill 所在目录向上发现 Tools/MoonArtsTool。
+独立安装时由调用进程设置 MOON_ARTS_TOOL_DIR 指向工具目录。
 
 ```powershell
-copy local\blender.local.json.example local\blender.local.json
-pwsh scripts/ensure.ps1
+pwsh ./scripts/moon.ps1 blender status
+pwsh ./scripts/moon.ps1 blender capabilities
 ```
+
+命令示例从本 Skill 根执行；参数以实际 CLI --help 和 capabilities 为准。
+工具维护见 [工具维护](references/moon-tool.md)，效果专题见 [玻璃烘焙](references/cycles-fixed-view-glass-bake.md)。
+
+## 仓库
+
+[源代码](https://github.com/MlsMoon/open-blender-kit)。
+此目录本身是独立 Git 仓库。提交与推送在此仓库按授权范围进行，宿主版本管理另行处理。
+目录名与 SKILL.md 的 name 保持一致；本机路径不写入版本控制。
 
 ## License
 

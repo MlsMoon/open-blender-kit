@@ -48,7 +48,7 @@ use a `4 vertices / 2 triangles` proxy:
 Do not add a per-frame mesh sort at runtime. Fixed-view assets finish order and
 framing in the DCC.
 
-## MCP chunks
+## CLI jobs
 
 Split the work. Read objects back and save the `.blend` after each chunk:
 
@@ -59,9 +59,9 @@ Split the work. Read objects back and save the `.blend` after each chunk:
 5. Grade transparent PNG Alpha and composite on light and dark backgrounds.
 6. Build the single-layer proxy, read back `4 vertices / 2 faces`, save, export FBX.
 
-Do not pack device enum, a heavy scene build, and a render into one
-`execute_blender_code`. On timeout, only restart an isolated Blender this task
-started (PID and port already checked), then continue from the last save.
+Do not pack device enumeration, a heavy scene build, and rendering into one
+CLI execute job. On timeout, query the same job ID and inspect its state;
+do not restart the instance or repeat a write whose outcome is unknown.
 
 ## Blender 5.1 API traps
 
@@ -179,7 +179,7 @@ Geometry while Model `Lcl Scaling` is `100`. Final size is the product.
 
 ## Done when you have
 
-- Blender MCP status, scene / object readback, viewport screenshot, and the
+- MoonArtsToolCLI status, scene / object readback, rendered preview, and the
   saved `.blend`.
 - Preview / final settings, wall time, device, and Alpha stats.
 - Overlay FBX Geometry, UVs, winding, Model transform, and combined size.

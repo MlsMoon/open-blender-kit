@@ -1,4 +1,4 @@
 interface:
-  display_name: "Blender MCP kit"
-  short_description: "Configure and call local Blender MCP for modeling, scene checks, screenshots, and GLB export."
-  default_prompt: "Use $open-blender-kit to repair local Blender MCP and build a verified 3D mesh."
+  display_name: "Blender：命令行建模工具"
+  short_description: "通过 MoonArtsToolCLI 完成隔离建模、场景核验、渲染与模型导出"
+  default_prompt: "使用 $open-blender-kit 通过 MoonArtsToolCLI 操作隔离 Blender 实例，并回读场景和交付物。"

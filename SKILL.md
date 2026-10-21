@@ -1,136 +1,55 @@
 ---
 name: open-blender-kit
-description: >
-  Configure, repair, launch, and use the local Blender MCP on Windows
-  for procedural modeling, scene inspection, screenshots, saving, and GLB/FBX
-  export. Use when working in Blender, creating or editing 3D models,
-  validating a scene, rendering fixed-view Cycles glass, exporting game-engine
-  assets, invoking Blender MCP tools, or troubleshooting missing uvx, addon,
-  port, client configuration, or MCP connectivity. Not tied to a host game
-  project.
+description: 通过 MoonArtsToolCLI 操作隔离 Blender 实例，完成建模、场景检查、渲染、保存与 FBX/GLB 导出。
 license: MIT
 metadata:
   author: MlsMoon
 ---
 
-# open-blender-kit
+# Blender：命令行建模工具
 
-Fix the MCP link until tools actually run, then model. A running Blender process
-or a listening port is not enough.
+唯一工具入口为 MoonArtsToolCLI。此仓库保留 open-blender-kit 身份，可在不同宿主项目使用。
+先读取真实场景；进程存在、命令已入队或作业仍在运行都不等于成功。
 
-This repository **is** the skill folder. It is not tied to any game project.
-Keep the directory name, GitHub repo name, and `SKILL.md` `name` as
-`open-blender-kit`. Host paths live in `local/blender.local.json`, not in this
-file.
+## 入口与检查
 
-## Quick start
-
-From this skill root:
+从宿主项目根执行下例；安装位置不同则使用实际 Skill 路径。
+包装脚本从当前目录和 Skill 所在目录向上发现 Tools/MoonArtsTool。
+也可由调用进程设置 MOON_ARTS_TOOL_DIR 指向含 EXE 和 manifest.json 的目录，不落盘机器路径。
 
 ```powershell
-pwsh scripts/ensure.ps1 -CheckOnly
+pwsh .agents/skills/open-blender-kit/scripts/moon.ps1 blender status
+pwsh .agents/skills/open-blender-kit/scripts/moon.ps1 blender capabilities
+pwsh .agents/skills/open-blender-kit/scripts/moon.ps1 blender start --blender <运行时发现的软件路径>
+pwsh .agents/skills/open-blender-kit/scripts/moon.ps1 blender scene --instance <返回的实例>
+pwsh .agents/skills/open-blender-kit/scripts/moon.ps1 blender execute --instance <实例> --script <可信脚本.py> --wait 10
+pwsh .agents/skills/open-blender-kit/scripts/moon.ps1 blender job --instance <实例> --id <作业> --wait 10
 ```
 
-Install or repair uv, Python 3.11, the Blender addon, and Codex / Claude / Cursor
-MCP config:
+优先复用 Launcher 配置中的 Blender 路径；缺软件或内置工具时报告缺口，不自动安装或发布。
+包装脚本核对 manifest 的文件名、协议与 SHA256；校验用于发现错配，不等同于发布签名。
 
-```powershell
-pwsh scripts/ensure.ps1
-```
+## 操作与持久化
 
-After repair, start Blender with a hidden window:
+- 默认创建本任务独立的 GUI 事件循环实例并隐藏窗口；用户要看编辑器时使用 --visible。
+- 所有修改明确指定实例；按几何、材质、灯光、渲染与导出分段执行并回读 scene/inspect。
+- 先查本地 capabilities，再查指定实例的 capabilities；旧 worker 不自动热更新。
+- 保存用 save --instance <实例> --output <新文件.blend>；导出用 export 并指定 collection 与 output。
+- render 使用当前相机输出 PNG；frame 会改变相机并标脏，不把取景当只读检查。
+- 覆盖须显式 --overwrite；关闭脏实例默认拒绝，丢弃未保存内容须有明确授权。
+- 导出要求 Object Mode、集合对象可选并处于当前 view layer；FBX 单位、轴向和节点缩放一起核对。
+- 写入可用 --request-id；同 ID 同内容复用作业，冲突内容拒绝。超时继续查询原 job，不重发写入。
+- 仅 succeeded 表示作业完成；failed/interrupted 先检查错误、实际状态和已保存产物。
+- 不保存、关闭或覆盖用户其他实例；不因超时终止编辑器。保存后仍需确认 clean 状态。
 
-```powershell
-pwsh scripts/ensure.ps1 -Launch
-```
+## 按需参考
 
-Run an isolated real MCP modeling test (Suzanne clay mesh):
+- 工具发现、内置副本维护与故障定位：[工具维护](references/moon-tool.md)。
+- 固定视角厚玻璃、Cycles 设备、透明 Alpha 与单层代理：[玻璃烘焙](references/cycles-fixed-view-glass-bake.md)。
+- 隔离示例脚本 scripts/build_suzanne.py 提供 build_suzanne(output_dir)；只在全新任务实例运行，会清空该实例场景。输出目录必须是新目录。
+- 导出网格检查可使用 3d-model-data-reader；宿主资产绑定与序列化规则由宿主持有。
 
-```powershell
-pwsh scripts/ensure.ps1 -SmokeTest
-```
+## 验收
 
-`-SmokeTest` writes files and check images under `tmp/cases/` inside this skill.
-It does not open or overwrite a user's current `.blend`.
-
-## Modeling flow
-
-1. Run `scripts/ensure.ps1 -CheckOnly`. If anything is missing, run the default
-   repair. Restart the client if tools still do not appear.
-2. Confirm Blender MCP tools are visible. Call `get_addon_status` and
-   `get_scene_info` before writing the scene.
-3. Split complex modeling into small `execute_blender_code` chunks: body,
-   extras, materials, camera and lights, then save / export.
-4. After each stage, read back object names, sizes, counts, and parenting with
-   `get_object_info` or a scene summary.
-5. Capture a screenshot at the end. Save the `.blend` where the user asked.
-   Prefer `.glb` or `.fbx` when handing off to a game engine.
-
-If you are editing an existing scene, confirm the save path and intent first.
-Do not change a scene the user is editing just to test. Use an isolated Blender
-instance and this skill's `tmp/`.
-
-Fixed-view glass, Cycles / OptiX device setup, transparent Alpha, and a
-single-layer proxy for a game engine follow
-[`references/cycles-fixed-view-glass-bake.md`](references/cycles-fixed-view-glass-bake.md).
-
-If a texture is already a complete glass beauty for a fixed camera, do not
-project it onto every face of a closed glass mesh. Front and back surfaces
-resample the same image and stack Alpha. Reordering vertices or triangles does
-not remove that overlap. Use a camera-facing single-layer proxy and disable the
-original glass renderer in the engine. When exporting FBX, check Geometry,
-Model Scale, and units together.
-
-## Runtime rules
-
-- Do not host MCP with `blender --background`. The upstream addon returns to
-  the main thread through `bpy.app.timers`; true background mode never handles
-  commands.
-- Default launch uses a normal GUI event loop with a hidden window. If hiding
-  fails, minimize. Do not claim a true headless server.
-- Use uv-managed Python 3.11. The MCP command is always
-  `uvx --python 3.11 blender-mcp`.
-- Default `DISABLE_TELEMETRY=true`. Do not enable or fill Sketchfab, Hyper3D,
-  Hunyuan 3D, or similar keys unless the user asks.
-- Only one Blender addon server per host/port. If a non-Blender process owns
-  the port, pick a free port in 9877–9899 and update all three client configs.
-- Do not kill existing Blender processes. Test scripts only stop the isolated
-  instance they started.
-- Machine-local paths stay in `local/blender.local.json`. Copy
-  `local/blender.local.json.example` if the file is missing.
-
-## Fault loop
-
-Fix the error, then call MCP again. Do not blind-retry:
-
-| Symptom | Fix |
-|---|---|
-| `uvx` missing | Run `scripts/ensure.ps1`. Install uv with the official installer, not `pip install uv` |
-| Python / dependency clash | Pin `--python 3.11` and `UV_PYTHON_PREFERENCE=only-managed` |
-| Addon missing or stale | Run `uvx blender-mcp install-addon`, re-enable the addon, restart Blender |
-| 9876 in use | Identify the owner; if not Blender, pick a free port 9877–9899 and reconfigure clients |
-| MCP tools missing | Check Codex, Claude, and Cursor user config, then fully restart that client |
-| Connect timeout | Confirm a GUI event loop (not `--background`), then addon server and port |
-| First call fails | Call status / scene tools first; only then refresh the uv cache and reinstall the addon |
-| Blender 5.1 hangs after `get_devices()` | Do not retry that call. Use `get_device_list()` + `update_device_entries()`. See the glass bake reference |
-
-## Suzanne smoke case
-
-`scripts/build_suzanne.py` is a reusable in-Blender case. It builds Suzanne,
-three check renders, a `.blend`, and a `.glb`. Use it to prove MCP can model
-and export. Do not count results from an external AI asset service as success.
-
-To inspect the exported mesh, you can follow with
-[3d-model-data-reader](https://github.com/MlsMoon/3d-model-data-reader).
-
-## Checklist
-
-- [ ] `scripts/ensure.ps1 -CheckOnly` reports no FAIL
-- [ ] `get_addon_status` and `get_scene_info` can run
-- [ ] Modeling is split into small `execute_blender_code` calls with object readback
-- [ ] Deliverables include a screenshot; game-engine handoff exports `.glb` / `.fbx`
-- [ ] Cycles work records preview size, samples, time cap, wall time, and device fallback
-- [ ] Fixed-view full beauty uses a single-layer proxy, not stacked blending on a closed mesh
-- [ ] FBX size is checked with Geometry, Model Scale, UnitScaleFactor, and the engine import
-- [ ] Engine saves do not drag in unrelated serialization cleanup
-- [ ] The user's open `.blend` was not changed; test outputs stay in this skill's `tmp/`
+CLI 回执、实际场景、渲染图片、导出数据与宿主效果分别记录。
+渲染应查看图片，模型应回读几何/UV/层级/单位；不把 status 或文件存在当视觉通过。

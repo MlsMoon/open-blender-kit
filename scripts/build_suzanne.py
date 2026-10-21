@@ -111,7 +111,3 @@ def build_suzanne(output_dir):
     }
     print("OBK_SUZANNE=" + json.dumps(summary, ensure_ascii=True))
     return summary
-
-
-if globals().get("BLENDER_MCP_RUN_CASE"):
-    build_suzanne(globals()["BLENDER_MCP_OUTPUT_DIR"])
